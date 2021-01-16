@@ -10,5 +10,6 @@ namespace PDR.PatientBooking.Service.BookingServices
     {
         void AddBooking(AddBookingRequest request);
         GetNextAppointmentResponse GetPatientsNextAppointment(long id);
+        UpdateBookingResponse UpdateBooking(UpdateBookingRequest request);
     }
 }

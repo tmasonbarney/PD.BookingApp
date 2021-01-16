@@ -59,6 +59,24 @@ namespace PDR.PatientBookingApi.Controllers
             }
         }
 
+        [HttpPut]
+        public IActionResult UpdateBooking(UpdateBookingRequest request)
+        {
+            try
+            {
+                var result = _bookingService.UpdateBooking(request);
+                return Ok(result.Booking);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex);
+            }
+        }
+
        
 
     }

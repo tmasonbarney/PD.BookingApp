@@ -3,6 +3,7 @@ using PDR.PatientBooking.Data.Models;
 using PDR.PatientBooking.Service.BookingServices.Requests;
 using PDR.PatientBooking.Service.BookingServices.Responses;
 using PDR.PatientBooking.Service.BookingServices.Validation;
+using PDR.PatientBooking.Service.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,17 +14,19 @@ namespace PDR.PatientBooking.Service.BookingServices
     public class BookingService : IBookingService
     {
         private readonly PatientBookingContext _context;
-        private readonly IAddBookingRequestValidator _validator;
+        private readonly IAddBookingRequestValidator _addBookingValidator;
+        private readonly IUpdateBookingRequestValidator _updateBookingRequestValidator;
 
-        public BookingService(PatientBookingContext context, IAddBookingRequestValidator validator)
+        public BookingService(PatientBookingContext context, IAddBookingRequestValidator addBookingValidator, IUpdateBookingRequestValidator updateBookingRequestValidator)
         {
             _context = context;
-            _validator = validator;
+            _addBookingValidator = addBookingValidator;
+            _updateBookingRequestValidator = updateBookingRequestValidator;
         }
 
         public void AddBooking(AddBookingRequest request)
         {
-            var validationResult = _validator.ValidateRequest(request);
+            var validationResult = _addBookingValidator.ValidateRequest(request);
 
             if (!validationResult.PassedValidation)
             {
@@ -38,13 +41,51 @@ namespace PDR.PatientBooking.Service.BookingServices
                 Patient = _context.Patient.FirstOrDefault(x => x.Id == request.PatientId),
                 DoctorId = request.DoctorId,
                 Doctor = _context.Doctor.FirstOrDefault(x => x.Id == request.DoctorId),
-                SurgeryType = (int)_context.Patient.FirstOrDefault(x => x.Id == request.PatientId).Clinic.SurgeryType
+                SurgeryType = (int)_context.Patient.FirstOrDefault(x => x.Id == request.PatientId).Clinic.SurgeryType,
+                Status = (int)BookingStatus.Open
             });
 
             _context.SaveChanges();
         }
 
-    
+        public UpdateBookingResponse UpdateBooking(UpdateBookingRequest request)
+        {
+            //Get order
+            var validationResult = _updateBookingRequestValidator.ValidateRequest(request);
+
+            if (!validationResult.PassedValidation)
+            {
+                throw new ArgumentException(validationResult.Errors.First());
+            }
+
+            var order = _context.Order.First(x => x.Id.Equals(request.Id));
+
+            //Update
+            order.StartTime = request.StartTime;
+            order.EndTime = request.EndTime;
+            order.PatientId = request.PatientId;
+            order.Patient = _context.Patient.FirstOrDefault(x => x.Id == request.PatientId);
+            order.DoctorId = request.DoctorId;
+            order.Doctor = _context.Doctor.FirstOrDefault(x => x.Id == request.DoctorId);
+            order.SurgeryType = (int)_context.Patient.FirstOrDefault(x => x.Id == request.PatientId).Clinic.SurgeryType;
+            order.Status = request.Status;
+
+            //Save
+            _context.SaveChanges();
+
+            return new UpdateBookingResponse
+            {
+                Booking = new Booking
+                {
+                    StartTime = order.StartTime,
+                    EndTime = order.EndTime,
+                    PatientId = order.PatientId,
+                    DoctorId = order.DoctorId,
+                    SurgeryType = order.SurgeryType,
+                    Status = (BookingStatus)order.Status
+                }
+            };
+        }
 
         public GetNextAppointmentResponse GetPatientsNextAppointment(long id)
         {
@@ -63,8 +104,10 @@ namespace PDR.PatientBooking.Service.BookingServices
                 }
                 else
                 {
-                    var bookings3 = bookings2.Where(x => x.StartTime > DateTime.Now);
+                    var bookings3 = bookings2.Where(x => x.StartTime > DateTime.Now && x.Status != (int)BookingStatus.Cancelled);
 
+
+                   
                     var nextBooking = new Booking
                     {
                         Id = bookings3.First().Id,
@@ -73,6 +116,7 @@ namespace PDR.PatientBooking.Service.BookingServices
                         DoctorId = bookings3.First().DoctorId,
                         StartTime = bookings3.First().StartTime,
                         EndTime = bookings3.First().EndTime,
+                        Status = (BookingStatus)bookings3.First().Status
                     };
 
                     return new GetNextAppointmentResponse

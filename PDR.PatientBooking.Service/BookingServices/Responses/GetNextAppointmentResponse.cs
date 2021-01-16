@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PDR.PatientBooking.Service.Enums;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -16,6 +17,14 @@ namespace PDR.PatientBooking.Service.BookingServices.Responses
             public long PatientId { get; set; }
             public long DoctorId { get; set; }
             public int SurgeryType { get; set; }
+            public BookingStatus Status { get; set; }
+        }
+
+        public enum BookingStatus
+        {
+            Open = 1,
+            Cancelled = 2
+             
         }
     }
 }
