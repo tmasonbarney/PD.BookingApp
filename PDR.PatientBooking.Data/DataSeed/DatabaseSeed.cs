@@ -38,6 +38,7 @@ namespace PDR.PatientBooking.Data.DataSeed
                     Id = Guid.Parse("683074b8-44c9-468b-9288-dfafa1e533c9"),
                     StartTime = new DateTime(2020, 1, 11, 12, 15, 00),
                     EndTime = new DateTime(2020, 1, 11, 12, 30, 00)
+                 
                 },
                 new Order
                 {

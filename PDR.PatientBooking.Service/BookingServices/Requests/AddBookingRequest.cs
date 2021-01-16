@@ -1,4 +1,6 @@
-﻿namespace PDR.PatientBooking.Service.BookingServices.Requests
+﻿using System;
+
+namespace PDR.PatientBooking.Service.BookingServices.Requests
 {
     public class AddBookingRequest
     {
